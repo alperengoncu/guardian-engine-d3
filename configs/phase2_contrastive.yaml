@@ -1,0 +1,59 @@
+# Phase 2 – Contrastive Pretraining
+# Learn dataset-invariant representations via supervised contrastive loss.
+
+defaults:
+  - base
+
+phase: 2
+name: contrastive_pretraining
+
+contrastive:
+  loss: supervised_contrastive   # supcon | ntxent
+  temperature: 0.07
+  projection_dim: 128
+  projection_hidden: [256]
+  augmentations:
+    - feature_dropout:
+        p: 0.1
+    - gaussian_noise:
+        std: 0.01
+    - feature_permutation:
+        fraction: 0.05
+
+training:
+  epochs: 200
+  batch_size: 1024
+  optimizer:
+    type: adamw
+    lr: 0.0005
+    weight_decay: 0.01
+  scheduler:
+    type: cosine
+    T_max: 200
+    eta_min: 0.000001
+  loss: supcon
+
+  # Two-stage: pretrain encoder, then fine-tune classifier
+  pretrain_epochs: 150
+  finetune_epochs: 50
+  freeze_encoder_during_finetune: false
+
+model:
+  encoder:
+    type: mlp
+    hidden_dims: [512, 256, 128]
+    latent_dim: 64
+    dropout: 0.3
+    activation: gelu
+    batch_norm: true
+  projector:
+    hidden_dims: [256]
+    output_dim: 128
+
+evaluation:
+  protocol: b
+  save_checkpoint: checkpoints/phase2/contrastive_best.pt
+
+output:
+  checkpoint_dir: checkpoints/phase2
+  metrics_file: results/metrics/phase2_contrastive.json
