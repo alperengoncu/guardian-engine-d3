@@ -28,6 +28,8 @@ def create_federated_loaders(
     batch_size = config.get('federated', {}).get('client', {}).get('batch_size', 1024)
     balanced = config.get('federated', {}).get('client', {}).get('balanced_sampling', True)
 
+    num_workers = config.get('federated', {}).get('client', {}).get('num_workers', 2)
+
     loaders = {}
     for ds_info in config['data']['datasets']:
         name = ds_info['name']
@@ -45,6 +47,7 @@ def create_federated_loaders(
                 label_type="binary",
                 shuffle=(split == "train"),
                 balanced=(balanced and split == "train"),
+                num_workers=num_workers,
             )
 
         if silo_loaders:

@@ -1,8 +1,7 @@
 # Phase 1 – Supervised Baseline
 # Train a standard MLP classifier on each dataset independently.
 
-defaults:
-  - base
+inherits: base.yaml
 
 phase: 1
 name: baseline_supervised

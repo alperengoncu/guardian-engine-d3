@@ -1,8 +1,7 @@
 # Phase 4 – Few-Shot Domain Adaptation
 # Adapt the global model to a new domain with minimal labeled data.
 
-defaults:
-  - base
+inherits: base.yaml
 
 phase: 4
 name: fewshot_adaptation

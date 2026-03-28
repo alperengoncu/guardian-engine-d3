@@ -52,7 +52,8 @@ class FlowGuard(nn.Module):
 
     def enable_domain_discriminator(self, num_domains=4, hidden_dims=None):
         model_dim = self.encoder.model_dim
-        self.domain_disc = DomainDiscriminator(model_dim, hidden_dims, num_domains)
+        device = next(self.encoder.parameters()).device
+        self.domain_disc = DomainDiscriminator(model_dim, hidden_dims, num_domains).to(device)
 
     def forward(self, x, return_embedding=False):
         embedding = self.encoder(x)

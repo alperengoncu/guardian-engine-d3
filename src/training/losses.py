@@ -82,8 +82,7 @@ class SupervisedContrastiveLoss(nn.Module):
         sim.masked_fill_(self_mask, -1e9)
 
         # Log-sum-exp of all non-self entries
-        exp_sim = torch.exp(sim)
-        exp_sim.masked_fill_(self_mask, 0)
+        exp_sim = torch.exp(sim) * (~self_mask).float()
         log_sum_exp = torch.log(exp_sim.sum(dim=1) + 1e-8)
 
         # Mean of log-prob over positive pairs

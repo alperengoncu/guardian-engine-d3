@@ -1,8 +1,7 @@
 # Phase 5 – Adversarial Hardening
 # Improve robustness against adversarial flow perturbations.
 
-defaults:
-  - base
+inherits: base.yaml
 
 phase: 5
 name: adversarial_hardening
@@ -49,16 +48,15 @@ model:
   # Load from Phase 4 adapted model
   pretrained: checkpoints/phase4/fewshot_best.pt
   encoder:
-    type: mlp
-    hidden_dims: [512, 256, 128]
-    latent_dim: 64
-    dropout: 0.3
-    activation: gelu
-    batch_norm: true
-  classifier:
-    hidden_dims: [64, 32]
-    num_classes: 2
-    dropout: 0.2
+    input_dim: 53
+    model_dim: 128
+    num_heads: 4
+    num_layers: 4
+    feedforward_dim: 512
+    dropout: 0.1
+  classification_head:
+    output_type: binary
+    hidden_dims: [64]
 
 evaluation:
   protocol: b

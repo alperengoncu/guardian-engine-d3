@@ -1,64 +1,34 @@
-# Phase 3 – Federated Learning
-# Simulate multi-site training using Flower (flwr).
-
-defaults:
-  - base
+inherits: base.yaml
 
 phase: 3
 name: federated_learning
 
 federated:
-  framework: flower
-  num_clients: 3
-  rounds: 50
-  fraction_fit: 1.0
-  fraction_evaluate: 1.0
-  min_fit_clients: 3
-  min_evaluate_clients: 3
-  strategy: fedavg            # fedavg | fedprox | scaffold
-  fedprox_mu: 0.01            # only used if strategy=fedprox
-
-  client_config:
+  server:
+    num_rounds: 50
+    fedprox_mu: 0.01
+    strategy: fedavg           # fedavg | fedprox
+  client:
     local_epochs: 5
     batch_size: 512
+    balanced_sampling: true
+    gradient_clip_norm: 1.0
     optimizer:
-      type: adamw
-      lr: 0.001
+      lr: 0.0001
       weight_decay: 0.01
-
-  # Each client gets a different dataset
-  client_datasets:
-    client_0: cicids2017
-    client_1: cicids2018
-    client_2: unsw_nb15
-
-  aggregation:
-    weighted_by: num_samples
-
-training:
-  # Global training params (per round)
-  epochs_per_round: 5
-  batch_size: 512
 
 model:
   encoder:
-    type: mlp
-    hidden_dims: [512, 256, 128]
-    latent_dim: 64
-    dropout: 0.3
-    activation: gelu
-    batch_norm: true
-  classifier:
-    hidden_dims: [64, 32]
-    num_classes: 2
-    dropout: 0.2
-
-  # Initialize from Phase 2 checkpoint
-  pretrained: checkpoints/phase2/contrastive_best.pt
-
-evaluation:
-  protocol: b
-  save_checkpoint: checkpoints/phase3/federated_best.pt
+    input_dim: 53
+    model_dim: 128
+    num_heads: 4
+    num_layers: 4
+    feedforward_dim: 512
+    dropout: 0.1
+  classification_head:
+    output_type: binary
+    hidden_dims: [64]
+  pretrained_encoder: ""      # set to checkpoints/phase2/best_encoder.pt to warm-start
 
 output:
   checkpoint_dir: checkpoints/phase3
