@@ -1,25 +1,21 @@
 # Phase 4 – Few-Shot Domain Adaptation
-# Adapt the global model to a new domain with minimal labeled data.
-
 inherits: base.yaml
 
 phase: 4
 name: fewshot_adaptation
 
 fewshot:
-  method: prototypical         # prototypical | maml | fine_tune
-  n_way: 2                    # binary classification
-  k_shot: 10                  # labeled examples per class
-  n_query: 15                 # query samples per class
+  method: prototypical
+  n_way: 2
+  k_shot: 10
+  n_query: 15
   episodes: 1000
   eval_episodes: 200
-
-  # Fine-tuning fallback
   finetune:
     epochs: 20
     lr: 0.0001
-    freeze_encoder: true       # only train classifier head
-    unfreeze_after: 10         # unfreeze encoder after N epochs
+    freeze_encoder: true
+    unfreeze_after: 10
 
 training:
   batch_size: 256
@@ -33,15 +29,14 @@ training:
     eta_min: 0.000001
 
 model:
-  # Load from Phase 3 federated model
-  pretrained: checkpoints/phase3/federated_best.pt
+  pretrained: checkpoints/phase3/final_global.pt
   encoder:
-    type: mlp
-    hidden_dims: [512, 256, 128]
-    latent_dim: 64
+    input_dim: 53
+    model_dim: 128
+    num_heads: 4
+    num_layers: 4
+    feedforward_dim: 512
     dropout: 0.1
-    activation: gelu
-    batch_norm: true
   classifier:
     hidden_dims: [64, 32]
     num_classes: 2

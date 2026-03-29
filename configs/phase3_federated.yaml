@@ -5,14 +5,15 @@ name: federated_learning
 
 federated:
   server:
-    num_rounds: 50
+    num_rounds: 10
     fedprox_mu: 0.01
-    strategy: fedavg           # fedavg | fedprox
+    strategy: fedavg
   client:
-    local_epochs: 5
-    batch_size: 512
+    local_epochs: 2
+    batch_size: 4096
     balanced_sampling: true
     gradient_clip_norm: 1.0
+    num_workers: 0
     optimizer:
       lr: 0.0001
       weight_decay: 0.01
@@ -28,7 +29,7 @@ model:
   classification_head:
     output_type: binary
     hidden_dims: [64]
-  pretrained_encoder: ""      # set to checkpoints/phase2/best_encoder.pt to warm-start
+  pretrained_encoder: "checkpoints/phase2/best_encoder.pt"
 
 output:
   checkpoint_dir: checkpoints/phase3

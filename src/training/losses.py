@@ -33,7 +33,7 @@ class NTXentLoss(nn.Module):
 
         # Mask out self-similarity (diagonal)
         mask = torch.eye(2 * N, device=z.device, dtype=torch.bool)
-        sim.masked_fill_(mask, -1e9)
+        sim = sim.masked_fill(mask, torch.finfo(sim.dtype).min / 2)
 
         # Positive pairs: (i, i+N) and (i+N, i)
         pos_i = torch.arange(N, device=z.device)
@@ -79,7 +79,7 @@ class SupervisedContrastiveLoss(nn.Module):
 
         # Mask out self
         self_mask = torch.eye(N, device=device, dtype=torch.bool)
-        sim.masked_fill_(self_mask, -1e9)
+        sim = sim.masked_fill(self_mask, torch.finfo(sim.dtype).min / 2)
 
         # Log-sum-exp of all non-self entries
         exp_sim = torch.exp(sim) * (~self_mask).float()

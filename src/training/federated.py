@@ -65,7 +65,8 @@ class FlowGuardClient:
 
         total_samples = 0
         for epoch in range(local_epochs):
-            for x, y in self.train_loader:
+            pbar = tqdm(self.train_loader, desc=f"  {self.dataset_name} epoch {epoch+1}/{local_epochs}", leave=False)
+            for x, y in pbar:
                 x, y = x.to(self.device), y.to(self.device)
                 optimizer.zero_grad()
 

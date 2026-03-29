@@ -7,9 +7,42 @@ import os
 import numpy as np
 import pandas as pd
 import torch
-from torch.utils.data import Dataset, DataLoader, WeightedRandomSampler
+from torch.utils.data import Dataset, DataLoader, WeightedRandomSampler, Sampler
 
 from src.data.features import LABEL_COLUMNS
+
+
+class ClassBalancedSampler(Sampler):
+    """
+    Class-balanced sampler with no 2^24 category limit (avoids torch.multinomial).
+    Caps epoch size at max_per_class samples per class so large datasets don't
+    produce enormous epochs that starve the GPU.
+    """
+
+    def __init__(self, labels: torch.Tensor, max_per_class: int = 100_000):
+        self.class_indices = {}
+        for cls in torch.unique(labels):
+            self.class_indices[cls.item()] = (labels == cls).nonzero(as_tuple=True)[0]
+        n_classes = len(self.class_indices)
+        self._n_per_class = min(
+            max(len(idx) for idx in self.class_indices.values()),
+            max_per_class,
+        )
+        self._total = self._n_per_class * n_classes
+
+    def __iter__(self):
+        indices = []
+        for cls_idx in self.class_indices.values():
+            n = len(cls_idx)
+            perm = torch.randperm(n)
+            repeats = (self._n_per_class + n - 1) // n  # ceil division
+            expanded = cls_idx[perm.repeat(repeats)[:self._n_per_class]]
+            indices.append(expanded)
+        all_idx = torch.cat(indices)[torch.randperm(self._total)]
+        return iter(all_idx.numpy())  # numpy avoids building a 40M-element Python list
+
+    def __len__(self):
+        return self._total
 
 
 class FlowDataset(Dataset):
@@ -85,22 +118,20 @@ def create_dataloader(
     label_type: str = "binary",
     shuffle: bool = True,
     balanced: bool = False,
-    num_workers: int = 2,
+    num_workers: int = 0,
     attack_to_idx: dict = None,
 ) -> DataLoader:
     """
     Create a DataLoader from a Parquet file.
 
     Args:
-        balanced: If True, use WeightedRandomSampler for class-balanced batches
+        balanced: If True, use ClassBalancedSampler for class-balanced batches
     """
     dataset = FlowDataset(parquet_path, label_type=label_type, attack_to_idx=attack_to_idx)
 
     sampler = None
     if balanced and dataset.labels is not None:
-        class_counts = torch.bincount(dataset.labels)
-        weights = 1.0 / class_counts[dataset.labels].float()
-        sampler = WeightedRandomSampler(weights, len(weights), replacement=True)
+        sampler = ClassBalancedSampler(dataset.labels)
         shuffle = False  # Sampler and shuffle are mutually exclusive
 
     return DataLoader(
@@ -117,7 +148,7 @@ def create_dataloader(
 def create_unlabeled_dataloader(
     parquet_path: str,
     batch_size: int = 4096,
-    num_workers: int = 2,
+    num_workers: int = 0,
 ) -> DataLoader:
     """Create DataLoader for unlabeled SSL data."""
     dataset = UnlabeledFlowDataset(parquet_path)
